@@ -142,8 +142,8 @@ export default function Home() {
         <aside className="practice-note">
           <span aria-hidden="true">✓</span>
           <p>
-            이번 주에는 <code>validateUrl</code> 함수를 완성해 입력값 검증을
-            구현합니다.
+            이번 주에는 <code>Route Handler</code>를 만들고 Backend API와
+            연결합니다.
           </p>
         </aside>
       </section>
