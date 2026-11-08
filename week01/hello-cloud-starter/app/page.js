@@ -85,68 +85,68 @@ export default function Home() {
     }
   }
 
-    return (
-      <main className="page-shell">
-        <section className="url-card" aria-labelledby="page-title">
-          <div className="week-label">CLOUD COMPUTING</div>
+  return (
+    <main className="page-shell">
+      <section className="url-card" aria-labelledby="page-title">
+        <div className="week-label">CLOUD COMPUTING</div>
 
-          <div className="intro">
-            <h1 id="page-title">URL Shortener</h1>
-            <p>
-              긴 URL을 입력하고, 안전하게 처리할 수 있는 값인지 확인해 보세요.
-            </p>
+        <div className="intro">
+          <h1 id="page-title">URL Shortener</h1>
+          <p>
+            긴 URL을 입력하고, 안전하게 처리할 수 있는 값인지 확인해 보세요.
+          </p>
+        </div>
+
+        <form className="url-form" onSubmit={handleSubmit} noValidate>
+          <label htmlFor="original-url">줄이고 싶은 URL</label>
+          <div className="input-row">
+            <input
+              id="original-url"
+              name="originalUrl"
+              type="text"
+              inputMode="url"
+              placeholder="https://example.com/very-long-url"
+              value={originalUrl}
+              onChange={handleChange}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "url-error" : undefined}
+              disabled={isLoading}
+            />
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? "Checking..." : "Shorten"}
+            </button>
           </div>
 
-          <form className="url-form" onSubmit={handleSubmit} noValidate>
-            <label htmlFor="original-url">줄이고 싶은 URL</label>
-            <div className="input-row">
-              <input
-                id="original-url"
-                name="originalUrl"
-                type="text"
-                inputMode="url"
-                placeholder="https://example.com/very-long-url"
-                value={originalUrl}
-                onChange={handleChange}
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? "url-error" : undefined}
-                disabled={isLoading}
-              />
-              <button type="submit" disabled={isLoading}>
-                {isLoading ? "Checking..." : "Shorten"}
-              </button>
-            </div>
+          <div className="message-area" aria-live="polite">
+            {error && (
+              <p id="url-error" className="message message-error" role="alert">
+                {error}
+              </p>
+            )}
 
-            <div className="message-area" aria-live="polite">
-              {error && (
-                <p id="url-error" className="message message-error" role="alert">
-                  {error}
-                </p>
-              )}
+            {isLoading && (
+              <p className="message message-loading" role="status">
+                <span className="spinner" aria-hidden="true" />
+                입력한 URL을 확인하고 있습니다.
+              </p>
+            )}
 
-              {isLoading && (
-                <p className="message message-loading" role="status">
-                  <span className="spinner" aria-hidden="true" />
-                  입력한 URL을 확인하고 있습니다.
-                </p>
-              )}
+            {result && (
+              <p className="message message-success" role="status">
+                {result}
+              </p>
+            )}
+          </div>
+        </form>
 
-              {result && (
-                <p className="message message-success" role="status">
-                  {result}
-                </p>
-              )}
-            </div>
-          </form>
-
-          <aside className="practice-note">
-            <span aria-hidden="true">✓</span>
-            <p>
-              이번 주에는 <code>validateUrl</code> 함수를 완성해 입력값 검증을
-              구현합니다.
-            </p>
-          </aside>
-        </section>
-      </main>
-    );
-  }
+        <aside className="practice-note">
+          <span aria-hidden="true">✓</span>
+          <p>
+            이번 주에는 <code>validateUrl</code> 함수를 완성해 입력값 검증을
+            구현합니다.
+          </p>
+        </aside>
+      </section>
+    </main>
+  );
+}
