@@ -26,7 +26,7 @@ export function authenticate(request) {
     const username = decodedCredentials.slice(0, separatorIndex);
     const password = decodedCredentials.slice(separatorIndex + 1);
 
-    // TODO 1. README의 인증 조건 코드를 아래 한 줄에 옮겨 적으세요.
+    // TODO 1. README의 인증 조건 코드를 아래 한 줄에 옮겨 적으세요
     const isValidAdmin =
       username === "admin" &&
       password === process.env.ADMIN_PASSWORD;
