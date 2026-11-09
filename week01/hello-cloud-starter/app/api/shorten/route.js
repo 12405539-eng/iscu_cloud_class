@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { saveUrl } from "../../../lib/db";
+import { saveUrl, findShortCodeByOriginalUrl } from "../../../lib/db";
 
 export const runtime = "nodejs";
 
@@ -42,12 +42,8 @@ function createShortCode(originalUrl, length = 6) {
  */
 export async function POST(request) {
   try {
-
     /*
-     * 1. 요청 body 읽기
-     *
-     * 클라이언트가 보낸 JSON에서
-     * originalUrl 값을 가져옵니다.
+     * 요청 body 읽기
      */
     const body = await request.json().catch(() => null);
 
@@ -55,14 +51,8 @@ export async function POST(request) {
     const originalUrl =
       typeof raw === "string" ? raw.trim() : "";
 
-
     /*
-     * 2. URL이 입력되지 않은 경우
-     *
-     * 클라이언트가 필요한 값을 보내지 않은 상황입니다.
-     *
-     * TODO:
-     * 적절한 HTTP status code로 수정하세요.
+     * 2. URL이 입력되지 않은 경우 (T03)
      */
     if (!originalUrl) {
       return NextResponse.json(
@@ -76,15 +66,8 @@ export async function POST(request) {
       );
     }
 
-
     /*
      * 3. URL이 너무 긴 경우
-     *
-     * 서버가 허용하는 최대 길이보다
-     * 긴 URL을 클라이언트가 보낸 상황입니다.
-     *
-     * TODO:
-     * 적절한 HTTP status code로 수정하세요.
      */
     if (originalUrl.length > MAX_URL_LENGTH) {
       return NextResponse.json(
@@ -99,25 +82,14 @@ export async function POST(request) {
       );
     }
 
-
     /*
-     * 4. URL 형식 검사
-     *
-     * new URL()을 이용하여
-     * 올바른 URL 형식인지 검사합니다.
+     * 4. URL 형식 검사 (T04)
      */
     let parsedUrl;
 
     try {
       parsedUrl = new URL(originalUrl);
     } catch {
-
-      /*
-       * 올바른 URL 형식이 아닌 경우
-       *
-       * TODO:
-       * 적절한 HTTP status code로 수정하세요.
-       */
       return NextResponse.json(
         {
           error: {
@@ -130,20 +102,10 @@ export async function POST(request) {
       );
     }
 
-
     /*
-     * 5. 프로토콜 검사
-     *
-     * http 또는 https만 허용합니다.
+     * 5. 프로토콜 검사 (T04)
      */
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-
-      /*
-       * 허용하지 않는 URL을 보낸 경우
-       *
-       * TODO:
-       * 적절한 HTTP status code로 수정하세요.
-       */
       return NextResponse.json(
         {
           error: {
@@ -156,26 +118,54 @@ export async function POST(request) {
       );
     }
 
+    /*
+     * 자기 서비스 URL 단축 방지
+     */
+    const requestHost =
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      new URL(request.url).host;
+
+    const currentHostname = requestHost.split(":")[0].toLowerCase();
+    const targetHostname = parsedUrl.hostname.toLowerCase();
+
+    if (currentHostname === targetHostname) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "INVALID_URL",
+            message: "Cannot shorten self-service URL.",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // baseUrl 조립
+    const protocol = request.headers.get("x-forwarded-proto") || "https";
+    const baseUrl = `${protocol}://${requestHost}`;
 
     /*
-     * 6. Short URL 생성
-     *
-     * 모든 검사를 통과했으므로
-     * shortCode와 shortUrl을 생성합니다.
+     * 동일 URL 중복 처리
      */
+    const existingCode = await findShortCodeByOriginalUrl(originalUrl);
+    if (existingCode) {
+      return NextResponse.json(
+        {
+          shortCode: existingCode,
+          shortUrl: `${baseUrl}/${existingCode}`,
+          originalUrl,
+        },
+        { status: 200 }
+      );
+    }
+
+    //Short URL 신규 생성
     const shortCode = createShortCode(originalUrl);
 
     await saveUrl(shortCode, originalUrl);
 
-    const baseUrl = new URL(request.url).origin;
-
-
-    /*
-     * URL 생성 성공
-     *
-     * TODO:
-     * 적절한 HTTP status code로 수정하세요.
-     */
+    //URL 생성 성공
     return NextResponse.json(
       {
         shortCode,
@@ -186,14 +176,8 @@ export async function POST(request) {
     );
 
   } catch {
-
     /*
      * 7. 서버 내부 오류
-     *
-     * 예상하지 못한 오류가 발생한 경우입니다.
-     *
-     * TODO:
-     * 적절한 HTTP status code로 수정하세요.
      */
     return NextResponse.json(
       {
